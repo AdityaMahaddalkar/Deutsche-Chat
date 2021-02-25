@@ -1,6 +1,6 @@
 import React,{ Component, useCallback,useEffect } from 'react';
 import { Text,View } from 'react-native'
-import ChatBotComponent from './chatbot'
+import ChatBot from 'react-native-chatbot'
 
 export default class DeutscheChat extends Component {
 
@@ -8,7 +8,6 @@ export default class DeutscheChat extends Component {
         super(props)
 
         this.state = { 
-            data: "",
 
             steps: [
                 {
@@ -21,12 +20,12 @@ export default class DeutscheChat extends Component {
                     options: [
                         { value: "posts", label: 'Balance', trigger: this.getData },
                         { value: "users", label: 'Account Statement', trigger:this.getData },
-                        { value: "users", label: 'Forms', trigger: this.getData },
+                        { value: "users1", label: 'Forms', trigger: this.getData },
                     ],
                 },
                 {
-                    id: '3',
-                    message: ""+this.data,
+                    id: 'data',
+                    message: "abc" ,
                     trigger: "menu"
                 },
             ]
@@ -35,24 +34,31 @@ export default class DeutscheChat extends Component {
 
     getData = ( {value ,steps} ) => {
 
+        key = "data"
         
-        const response = fetch('https://jsonplaceholder.typicode.com/posts/1')
-            .then(response => response.json)
-            .then(json => this.setState({data: json.id}))
+        fetch('https://jsonplaceholder.typicode.com/posts/1')
+            .then(response => response.json())
+            .then(json => {
+
+                this.setState(prevState => ({
+
+                    steps: prevState.steps.map(
+                      el => el.id === key? { ...el, message : json.id }: el
+                    )
+            }))
+        })
             .catch((error) => console.error(error))
         
-        console.log(response)
-        return "3"
+        return key
             
     }
     
     render(){
+
+        console.log(this.state.steps)
         
-        const steps = this.state.steps
         return(
-            <View>
-                <ChatBotComponent steps={steps}/>
-            </View>        
+                <ChatBot steps={this.state.steps}/>  
         );
     }
 };

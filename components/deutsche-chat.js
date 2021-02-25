@@ -1,58 +1,87 @@
-import React,{ Component, useCallback,useEffect } from 'react';
-import { Text,View } from 'react-native'
-import ChatBotComponent from './chatbot'
+import React, { Component, useCallback, useEffect } from "react";
+import { Text, View } from "react-native";
+import * as Speech from "expo-speech";
 
 export default class DeutscheChat extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      currentId: 0,
+      outputToggler: false,
+      formOutput: [],
+      data: "",
+      template: [
+        {
+          id: "1",
+          label: "Name",
+          time: 10,
+        },
+        {
+          id: "2",
+          label: "Address",
+          time: 20,
+        },
+      ],
+    };
+  }
 
-    constructor(props){
-        super(props)
-
-        this.state = { 
-            data: "",
-
-            steps: [
-                {
-                    id: 'hi',
-                    message: 'Hi,' + props.user,
-                    trigger: 'menu',
-                },
-                {
-                    id: 'menu',
-                    options: [
-                        { value: "posts", label: 'Balance', trigger: this.getData },
-                        { value: "users", label: 'Account Statement', trigger:this.getData },
-                        { value: "users", label: 'Forms', trigger: this.getData },
-                    ],
-                },
-                {
-                    id: '3',
-                    message: ""+this.data,
-                    trigger: "menu"
-                },
-            ]
-        }
+  promptLabel = () => {
+    //  prompt label with current id
+    let label = this.state.template[this.state.currentId].label;
+    if (label) {
+      Speech.speak(label);
     }
+  };
 
-    getData = ( {value ,steps} ) => {
+  gcpSTOT = (mp3) => {
+    return "Something";
+  };
 
-        
-        const response = fetch('https://jsonplaceholder.typicode.com/posts/1')
-            .then(response => response.json)
-            .then(json => this.setState({data: json.id}))
-            .catch((error) => console.error(error))
-        
-        console.log(response)
-        return "3"
-            
+  getUserInput = (time) => {
+    //   take input from user for time t sec
+    data = this.gcpSTOT("mp3");
+    let holder = this.state.formOutput;
+    holder.push({
+      label: this.state.template[this.state.currentId].label,
+      value: data,
+    });
+    this.setState({ formOutput: holder });
+  };
+
+  componentDidMount() {
+    this.processSingleFormInput();
+  }
+
+  processSingleFormInput() {
+    this.promptLabel();
+    t = this.state.template[this.state.currentId].time;
+    this.getUserInput(t);
+    let holder = this.state.currentId + 1;
+    if (this.state.template[holder]) {
+      setTimeout(
+        () =>
+          this.setState({
+            currentId: holder,
+          }),
+        5000
+      );
+    } else {
+      console.log(this.state.formOutput);
     }
-    
-    render(){
-        
-        const steps = this.state.steps
-        return(
-            <View>
-                <ChatBotComponent steps={steps}/>
-            </View>        
-        );
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.currentId != this.state.currentId) {
+      this.processSingleFormInput();
     }
-};
+  }
+
+  render() {
+    const steps = this.state.steps;
+    return (
+      <View>
+        <Text>{this.state.template[this.state.currentId].label}</Text>
+      </View>
+    );
+  }
+}

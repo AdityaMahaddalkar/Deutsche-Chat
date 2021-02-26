@@ -1,11 +1,24 @@
 import React, { Component } from "react";
-import { Text, View } from "react-native";
+import { Text, View, StyleSheet } from "react-native";
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import axios from "axios";
 import * as FileSystem from "expo-file-system";
+import { Chip } from "react-native-paper";
+import { color } from "react-native-reanimated";
 
 const baseAudioPostURL = "https://stof-backend-nbrcoenmvq-de.a.run.app/audio";
+
+const styles = StyleSheet.create({
+  chip: {
+    width: "50%",
+    marginLeft: 10,
+    marginTop: 20,
+    backgroundColor: "#45B39D",
+    color: "#F7F9F9",
+    textDecorationColor: "#F7F9F9",
+  },
+});
 
 export default class DeutscheChat extends Component {
   constructor(props) {
@@ -15,6 +28,7 @@ export default class DeutscheChat extends Component {
       currentId: 0,
       outputToggler: false,
       formOutput: [],
+      formComplete: false,
       data: "",
       template: [
         {
@@ -146,8 +160,30 @@ export default class DeutscheChat extends Component {
 
   render() {
     return (
-      <View>
-        <Text>{this.state.template[this.state.currentId].label}</Text>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "column",
+        }}
+      >
+        <View>
+          {this.state.template.map((value, index) => {
+            if (index <= this.state.currentId) {
+              return (
+                <Chip key={index} style={styles.chip}>
+                  {value.label}
+                </Chip>
+              );
+            }
+          })}
+        </View>
+        <View>
+          {this.state.formOutput.map((value, index) => {
+            if (value) {
+              return <Chip key={index}>{value.value}</Chip>;
+            }
+          })}
+        </View>
       </View>
     );
   }

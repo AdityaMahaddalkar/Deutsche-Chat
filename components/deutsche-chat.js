@@ -13,6 +13,11 @@ const baseAudioPostURL = baseurls.AUDIO_POST_URL;
 const formTemplateGetURL = baseurls.FORM_TEMPLATE_GET_URL;
 const formStoragePostURL = baseurls.FORM_STORAGE_POST_URL;
 
+const AUTH_TOKEN =
+  "94d002c0eae883c64d57e67d32a3c39553b7431051d3a3f8c8f230f9415c4f3e";
+
+axios.defaults.headers.common["Authorization"] = AUTH_TOKEN;
+
 const styles = StyleSheet.create({
   chipLeft: {
     width: "90%",
@@ -160,12 +165,17 @@ export default class DeutscheChat extends Component {
   componentDidMount() {
     // fill in the template
     console.log(`Component did mount called`);
-    axios.get(formTemplateGetURL).then((response) => {
-      if (response.status === 200) {
-        console.log(`Received data from form template : ${response.data}`);
-        this.setState({ template: response.data.values });
-      }
-    });
+    axios
+      .get(formTemplateGetURL)
+      .then((response) => {
+        if (response.status === 200) {
+          console.log(`Received data from form template : ${response.data}`);
+          this.setState({ template: response.data.values });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
 
     // this.processSingleFormInput();
   }

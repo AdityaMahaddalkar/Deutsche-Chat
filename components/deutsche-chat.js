@@ -6,8 +6,11 @@ import axios from "axios";
 import * as FileSystem from "expo-file-system";
 import { Chip } from "react-native-paper";
 import { color } from "react-native-reanimated";
+import { baseurls } from "../utils/BaseURLs";
 
-const baseAudioPostURL = "https://stof-backend-nbrcoenmvq-de.a.run.app/audio";
+const baseAudioPostURL = baseurls.AUDIO_POST_URL;
+const formTemplateGetURL = baseurls.FORM_TEMPLATE_GET_URL;
+const formStoragePostURL = baseurls.FORM_STORAGE_POST_URL;
 
 const styles = StyleSheet.create({
   chipLeft: {
@@ -44,23 +47,7 @@ export default class DeutscheChat extends Component {
       formOutput: [],
       formComplete: false,
       data: "",
-      template: [
-        {
-          id: "1",
-          label: "Name",
-          time: 5,
-        },
-        {
-          id: "2",
-          label: "Address",
-          time: 5,
-        },
-        {
-          id: "3",
-          label: "Phone",
-          time: 5,
-        },
-      ],
+      template: [],
     };
   }
 
@@ -151,14 +138,23 @@ export default class DeutscheChat extends Component {
   };
 
   componentDidMount() {
-    this.processSingleFormInput();
+    // fill in the template
+    console.log(`Component did mount called`);
+    axios.get(formTemplateGetURL).then((response) => {
+      if (response.status === 200) {
+        console.log(`Received data from form template : ${response.data}`);
+        this.setState({ template: response.data.values });
+      }
+    });
+
+    // this.processSingleFormInput();
   }
 
   processSingleFormInput() {
     this.promptLabel();
     this.wait(1000);
     if (this.state.template[this.state.currentId]) {
-      t = this.state.template[this.state.currentId].time;
+      let t = this.state.template[this.state.currentId].time || 10;
       let holder = this.state.currentId + 1;
       this.startRecording();
       setTimeout(() => {
@@ -175,7 +171,10 @@ export default class DeutscheChat extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.currentId != this.state.currentId) {
+    if (
+      prevState.currentId !== this.state.currentId ||
+      prevState.template !== this.state.template
+    ) {
       this.processSingleFormInput();
     }
 
@@ -208,15 +207,17 @@ export default class DeutscheChat extends Component {
         }}
       >
         <View style={styles.viewLeft}>
-          {this.state.template.map((value, index) => {
-            if (index <= this.state.currentId) {
-              return (
-                <Chip key={index} style={styles.chipLeft}>
-                  {value.label}
-                </Chip>
-              );
-            }
-          })}
+          {this.state.template.length > 0
+            ? this.state.template.map((value, index) => {
+                if (index <= this.state.currentId) {
+                  return (
+                    <Chip key={index} style={styles.chipLeft}>
+                      {value.label}
+                    </Chip>
+                  );
+                }
+              })
+            : null}
         </View>
         <View style={styles.viewRight}>
           {this.state.formOutput.map((value, index) => {

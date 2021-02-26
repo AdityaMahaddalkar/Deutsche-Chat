@@ -7,6 +7,7 @@ import * as FileSystem from "expo-file-system";
 import { Chip } from "react-native-paper";
 import { color } from "react-native-reanimated";
 import { baseurls } from "../utils/BaseURLs";
+import * as LocalAuthentication from "expo-local-authentication";
 
 const baseAudioPostURL = baseurls.AUDIO_POST_URL;
 const formTemplateGetURL = baseurls.FORM_TEMPLATE_GET_URL;
@@ -48,6 +49,7 @@ export default class DeutscheChat extends Component {
       formComplete: false,
       data: "",
       template: [],
+      fingerPrint: false,
     };
   }
 
@@ -95,12 +97,6 @@ export default class DeutscheChat extends Component {
       type: "audio/m4a",
       name: "s2t",
     });
-
-    const health = await axios
-      .get(baseAudioPostURL + "/health")
-      .then((response) => {
-        console.log(`Health status : ${JSON.stringify(response)}`);
-      });
 
     const promise = await axios
       .post(baseAudioPostURL, fd)
@@ -178,7 +174,10 @@ export default class DeutscheChat extends Component {
       this.processSingleFormInput();
     }
 
-    if (this.state.formComplete) {
+    if (
+      prevState.formComplete != this.state.formComplete &&
+      this.state.formComplete
+    ) {
       console.log("Form complete");
       let reiteration = "I'll be re iterating the form now";
       Speech.speak(reiteration);
@@ -189,9 +188,37 @@ export default class DeutscheChat extends Component {
         Speech.speak(value.value);
         this.wait(1000);
       });
+      this.wait(1000);
 
-      let correctPrompt = "is this information correct?";
+      let correctPrompt =
+        "is this information correct? Press on fingerprint to confirm";
       Speech.speak(correctPrompt);
+      this.wait(2000);
+
+      this.onAuthentication().then(() => {
+        if (this.state.fingerPrint) {
+          let authenticated = "Form submitted";
+          Speech.speak(authenticated);
+          let values = {
+            values: this.state.formOutput,
+          };
+          axios.post(baseurls.FORM_STORAGE_POST_URL, JSON.stringify(values));
+        }
+      });
+    }
+  }
+
+  async onAuthentication() {
+    const hasHadware = await LocalAuthentication.hasHardwareAsync();
+    if (hasHadware) {
+      const typeAuthentication = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      if (typeAuthentication.includes(1)) {
+        const enrollment = await LocalAuthentication.isEnrolledAsync();
+        if (enrollment) {
+          const authenticate = await LocalAuthentication.authenticateAsync();
+          if (authenticate.success) this.setState({ fingerPrint: true });
+        }
+      }
     }
   }
 

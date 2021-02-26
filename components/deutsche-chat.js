@@ -10,13 +10,27 @@ import { color } from "react-native-reanimated";
 const baseAudioPostURL = "https://stof-backend-nbrcoenmvq-de.a.run.app/audio";
 
 const styles = StyleSheet.create({
-  chip: {
-    width: "50%",
+  chipLeft: {
+    width: "100%",
     marginLeft: 10,
-    marginTop: 20,
+    marginTop: 10,
+    marginBottom: 30,
     backgroundColor: "#45B39D",
     color: "#F7F9F9",
+    fontSize: 14,
     textDecorationColor: "#F7F9F9",
+  },
+  chipRight: {
+    width: "100%",
+    marginRight: 10,
+    marginTop: 40,
+    fontSize: 14,
+  },
+  viewLeft: {
+    width: "50%",
+  },
+  viewRight: {
+    width: "50%",
   },
 });
 
@@ -39,7 +53,12 @@ export default class DeutscheChat extends Component {
         {
           id: "2",
           label: "Address",
-          time: 10,
+          time: 5,
+        },
+        {
+          id: "3",
+          label: "Phone",
+          time: 5,
         },
       ],
     };
@@ -138,23 +157,42 @@ export default class DeutscheChat extends Component {
   processSingleFormInput() {
     this.promptLabel();
     this.wait(1000);
-    t = this.state.template[this.state.currentId].time;
-    let holder = this.state.currentId + 1;
-    this.startRecording();
-    setTimeout(() => {
-      this.stopRecording().then((promise) => {
-        if (this.state.template[holder]) {
-          this.setState({ currentId: holder });
-        } else {
-          console.log(this.state.formOutput);
-        }
-      });
-    }, t * 1000);
+    if (this.state.template[this.state.currentId]) {
+      t = this.state.template[this.state.currentId].time;
+      let holder = this.state.currentId + 1;
+      this.startRecording();
+      setTimeout(() => {
+        this.stopRecording().then((promise) => {
+          if (this.state.template[holder]) {
+            this.setState({ currentId: holder });
+          } else {
+            console.log(this.state.formOutput);
+            this.setState({ formComplete: true });
+          }
+        });
+      }, t * 1000);
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.currentId != this.state.currentId) {
       this.processSingleFormInput();
+    }
+
+    if (this.state.formComplete) {
+      console.log("Form complete");
+      let reiteration = "I'll be re iterating the form now";
+      Speech.speak(reiteration);
+      this.wait(1000);
+      this.state.formOutput.map((value) => {
+        Speech.speak(value.label);
+        this.wait(1000);
+        Speech.speak(value.value);
+        this.wait(1000);
+      });
+
+      let correctPrompt = "is this information correct?";
+      Speech.speak(correctPrompt);
     }
   }
 
@@ -163,24 +201,31 @@ export default class DeutscheChat extends Component {
       <View
         style={{
           flex: 1,
-          flexDirection: "column",
+          flexDirection: "row",
+          alignSelf: "stretch",
+          justifyContent: "space-between",
+          alignContent: "space-between",
         }}
       >
-        <View>
+        <View style={styles.viewLeft}>
           {this.state.template.map((value, index) => {
             if (index <= this.state.currentId) {
               return (
-                <Chip key={index} style={styles.chip}>
+                <Chip key={index} style={styles.chipLeft}>
                   {value.label}
                 </Chip>
               );
             }
           })}
         </View>
-        <View>
+        <View style={styles.viewRight}>
           {this.state.formOutput.map((value, index) => {
             if (value) {
-              return <Chip key={index}>{value.value}</Chip>;
+              return (
+                <Chip key={index} style={styles.chipRight}>
+                  {value.value}
+                </Chip>
+              );
             }
           })}
         </View>

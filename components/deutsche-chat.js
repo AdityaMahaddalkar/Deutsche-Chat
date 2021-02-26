@@ -15,26 +15,37 @@ const formStoragePostURL = baseurls.FORM_STORAGE_POST_URL;
 
 const styles = StyleSheet.create({
   chipLeft: {
-    width: "100%",
+    width: "90%",
     marginLeft: 10,
     marginTop: 10,
     marginBottom: 30,
     backgroundColor: "#45B39D",
     color: "#F7F9F9",
-    fontSize: 14,
+    height: 50,
     textDecorationColor: "#F7F9F9",
+    alignContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   chipRight: {
-    width: "100%",
+    width: "90%",
     marginRight: 10,
     marginTop: 40,
-    fontSize: 14,
+    height: 50,
+    alignContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   viewLeft: {
     width: "50%",
   },
   viewRight: {
     width: "50%",
+  },
+  text: {
+    marginTop: 10,
   },
 });
 
@@ -102,7 +113,7 @@ export default class DeutscheChat extends Component {
       .post(baseAudioPostURL, fd)
       .then((response) => {
         console.log(`Response from POST : ${JSON.stringify(response)}`);
-        if (response.data.transcript) {
+        if (response.status === 200 && response.data.transcript) {
           let transcript = response.data.transcript;
           let holder = this.state.formOutput;
           holder.push({
@@ -110,10 +121,23 @@ export default class DeutscheChat extends Component {
             label: this.state.template[this.state.currentId].label,
             value: transcript,
           });
+        } else {
+          let holder = this.state.formOutput;
+          holder.push({
+            id: this.state.template[this.state.currentId].id,
+            label: this.state.template[this.state.currentId].label,
+            value: "NA",
+          });
         }
       })
       .catch((err) => {
         console.error(err);
+        let holder = this.state.formOutput;
+        holder.push({
+          id: this.state.template[this.state.currentId].id,
+          label: this.state.template[this.state.currentId].label,
+          value: "NA",
+        });
       });
   };
 
@@ -238,8 +262,15 @@ export default class DeutscheChat extends Component {
             ? this.state.template.map((value, index) => {
                 if (index <= this.state.currentId) {
                   return (
-                    <Chip key={index} style={styles.chipLeft}>
-                      {value.label}
+                    <Chip
+                      key={index}
+                      style={styles.chipLeft}
+                      textStyle={{
+                        color: "#fff",
+                        fontSize: 24,
+                      }}
+                    >
+                      <Text style={styles.text}>{value.label}</Text>
                     </Chip>
                   );
                 }
@@ -250,8 +281,14 @@ export default class DeutscheChat extends Component {
           {this.state.formOutput.map((value, index) => {
             if (value) {
               return (
-                <Chip key={index} style={styles.chipRight}>
-                  {value.value}
+                <Chip
+                  key={index}
+                  style={styles.chipRight}
+                  textStyle={{
+                    fontSize: 24,
+                  }}
+                >
+                  <Text style={styles.text}>{value.value}</Text>
                 </Chip>
               );
             }

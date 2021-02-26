@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import axios from "axios";
+import * as FileSystem from "expo-file-system";
 
 const baseAudioPostURL = "https://stof-backend-nbrcoenmvq-de.a.run.app/audio";
 
@@ -42,12 +43,12 @@ export default class DeutscheChat extends Component {
       const recording = new Audio.Recording();
       await recording.prepareToRecordAsync({
         android: {
-          extension: ".mp3",
+          extension: ".m4a",
           numberOfChannels: 1,
           sampleRate: 44100,
         },
         ios: {
-          extension: ".mp3",
+          extension: ".m4a",
           sampleRate: 44100,
           numberOfChannels: 1,
         },
@@ -63,25 +64,50 @@ export default class DeutscheChat extends Component {
   stopRecording = async () => {
     console.log("Stopping recording..");
     await this.state.recording.stopAndUnloadAsync();
-    const uri = this.state.recording.getURI();
-    console.log("Recording stopped and stored at", uri);
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    console.log(`Blob : ${JSON.stringify(blob)}`);
-    console.log(`Type of blob: ${typeof blob}`);
+
+    const info = await FileSystem.getInfoAsync(this.state.recording.getURI());
+    const uri = info.uri;
+    console.log(`URI from FileSys info : ${uri}`);
+
     var fd = new FormData();
-    fd.append("audio", blob, "audio.mp3");
+    fd.append("audio", {
+      uri,
+      type: "audio/m4a",
+      name: "s2t",
+    });
 
     const health = await axios
       .get(baseAudioPostURL + "/health")
       .then((response) => {
         console.log(`Health status : ${JSON.stringify(response)}`);
       });
-    var request = new XMLHttpRequest();
-    request.open("POST", baseAudioPostURL);
-    request.send(fd);
-    return;
+
+    const promise = await axios
+      .post(baseAudioPostURL, fd)
+      .then((response) => {
+        console.log(`Response from POST : ${JSON.stringify(response)}`);
+        if (response.data.transcript) {
+          let transcript = response.data.transcript;
+          let holder = this.state.formOutput;
+          holder.push({
+            id: this.state.template[this.state.currentId].id,
+            label: this.state.template[this.state.currentId].label,
+            value: transcript,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   };
+
+  wait(ms) {
+    var start = Date.now(),
+      now = start;
+    while (now - start < ms) {
+      now = Date.now();
+    }
+  }
 
   promptLabel = () => {
     //  prompt label with current id
@@ -91,29 +117,14 @@ export default class DeutscheChat extends Component {
     }
   };
 
-  gcpSTOT = () => {
-    return "Something";
-  };
-
-  getUserInput = () => {
-    //   take input from user for time t sec
-    data = this.gcpSTOT("mp3");
-    let holder = this.state.formOutput;
-    holder.push({
-      label: this.state.template[this.state.currentId].label,
-      value: data,
-    });
-    this.setState({ formOutput: holder });
-  };
-
   componentDidMount() {
     this.processSingleFormInput();
   }
 
   processSingleFormInput() {
     this.promptLabel();
+    this.wait(1000);
     t = this.state.template[this.state.currentId].time;
-    this.getUserInput(t);
     let holder = this.state.currentId + 1;
     this.startRecording();
     setTimeout(() => {
